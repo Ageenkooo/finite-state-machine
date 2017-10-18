@@ -8,6 +8,8 @@ class FSM {
         this.state = JSON.parse(this.config).initial;
         this.history = [this.state];
         this.histChange = [];
+        this.trigg = false;
+        this.chSt = false;
         /*if (isNaN(this.config)) {
             throw new Error("Smth goes wrong");
         }*/
@@ -30,6 +32,7 @@ class FSM {
             if(states[state] !== undefined){
                 this.state = state; 
                 this.history.push(this.state);
+                this.chSt = true;
             }
             else
                  throw new Error("Smth goes wrong");   
@@ -40,19 +43,8 @@ class FSM {
      * @param event
      */
     trigger(event) {
-        /*let k = 0;
-        function inside(smth, state){
-            for(var a in smth){
-                if(smth[a] instanceof Object){
-                    return inside(smth[a]);
-                }
-                else if(a === event){
-                    console.log(a)
-                    state = smth[a];
-                }
-            }
-        }
-        inside(JSON.parse(this.config, this.state));*/
+
+        var k = this.state;
         for(var a in JSON.parse(this.config)){
             if(JSON.parse(this.config)[a] instanceof Object){
                 for(var b in JSON.parse(this.config)[a]){
@@ -62,7 +54,12 @@ class FSM {
                                 for(var d in JSON.parse(this.config)[a][b][c]){
                                     if(d === event){
                                         this.state = JSON.parse(this.config)[a][b][c][d];
+                                        this.history.push(this.state);
+                                        this.trigg = true;
+                                        break;
                                     }
+                                    break;
+                                    
                                 }
                             }
                         }
@@ -70,7 +67,6 @@ class FSM {
                 }
             }
         }
-        this.history.push(this.state);
     }
 
     /**
@@ -118,14 +114,16 @@ class FSM {
      * @returns {Boolean}
      */
     undo() {
-        if(this.history.length && this.state != JSON.parse(this.config).initial){
+        if(this.history.length>1){
             this.histChange.push(this.history.pop());
             this.state = this.history.pop();
+            this.history.push(this.state);
+            this.trigg = false;
+            this.chSt = false;
             return true;
         }
-        else{
+        else
             return false;
-        }
         
     }
 
@@ -135,12 +133,15 @@ class FSM {
      * @returns {Boolean}
      */
     redo() {
-        if(this.state === JSON.parse(this.config).initial){
-            return false;
-        }
-        this.state = this.histChange.pop();
-
         
+        if(this.histChange.length == 0 || this.trigg || this.chSt)
+            return false;
+        else
+        {
+            this.state=this.histChange.pop();
+        return true;
+        }
+       
     }
 
     /**
@@ -148,6 +149,8 @@ class FSM {
      */
     clearHistory() {
         this.state = JSON.parse(this.config).initial;
+        this.histChange.length = 0;
+        this.history.length = 0;
     }
 }
 
